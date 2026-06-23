@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import HomeScreen from './screens/HomeScreen'
 import SetupScreen from './screens/SetupScreen'
 import GameScreen from './screens/GameScreen'

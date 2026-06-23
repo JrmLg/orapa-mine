@@ -5,25 +5,25 @@ export function registerListeners(
   channel.on(
     'broadcast',
     { event: 'player_joined' },
-    payload => callback(payload)
+    (payload: any) => callback(payload)
   )
 
   channel.on(
     'broadcast',
     { event: 'setup_ready' },
-    payload => callback(payload)
+    (payload: any) => callback(payload)
   )
 
   channel.on(
     'broadcast',
     { event: 'move_ray' },
-    payload => callback(payload)
+    (payload: any) => callback(payload)
   )
 
   channel.on(
     'broadcast',
     { event: 'ray_result' },
-    payload => callback(payload)
+    (payload: any) => callback(payload)
   )
 
   return channel
