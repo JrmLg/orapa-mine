@@ -1,122 +1,233 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { QRCodeCanvas } from 'qrcode.react'
+import { useEffect, useMemo, useState } from 'react'
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function createGameId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
 }
 
-export default App
+type Phase =
+  | 'home'
+  | 'create'
+  | 'join'
+  | 'setup'
+  | 'playing'
+
+type Cell = {
+  hasGem: boolean
+  note: boolean
+}
+
+export default function App() {
+  const [phase, setPhase] = useState<Phase>('home')
+  const [gameId, setGameId] = useState('')
+  const [ready, setReady] = useState(false)
+
+  const [board, setBoard] = useState<Cell[]>(
+    Array.from({ length: 64 }, () => ({
+      hasGem: false,
+      note: false
+    }))
+  )
+
+  const [enemyBoard, setEnemyBoard] = useState<Cell[]>(
+    Array.from({ length: 64 }, () => ({
+      hasGem: false,
+      note: false
+    }))
+  )
+
+  const [logs, setLogs] = useState<string[]>([])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const game = params.get('game')
+
+    if (game) {
+      setGameId(game.toUpperCase())
+      setPhase('join')
+    }
+  }, [])
+
+  const joinUrl = useMemo(() => {
+    if (!gameId) return ''
+    return `${window.location.origin}?game=${gameId}`
+  }, [gameId])
+
+  function createGame() {
+    setGameId(createGameId())
+    setPhase('create')
+  }
+
+  function joinGame() {
+    const id = window.prompt('Code de la partie ?')
+
+    if (!id) return
+
+    setGameId(id.toUpperCase())
+    setPhase('join')
+  }
+
+  function toggleSetupCell(index: number) {
+    setBoard(previous =>
+      previous.map((cell, i) =>
+        i === index
+          ? { ...cell, hasGem: !cell.hasGem }
+          : cell
+      )
+    )
+  }
+
+  function toggleNote(index: number) {
+    setEnemyBoard(previous =>
+      previous.map((cell, i) =>
+        i === index
+          ? { ...cell, note: !cell.note }
+          : cell
+      )
+    )
+  }
+
+  function fireRay(entry: number) {
+    setLogs(previous => [
+      `Rayon envoyé depuis l'entrée ${entry}`,
+      ...previous
+    ])
+  }
+
+  const gemCount = board.filter(x => x.hasGem).length
+
+  if (phase === 'home') {
+    return (
+      <main style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <h1>Orapa Mine</h1>
+        <button onClick={createGame}>Créer une partie</button>
+        <button onClick={joinGame}>Rejoindre une partie</button>
+      </main>
+    )
+  }
+
+  if (phase === 'create') {
+    return (
+      <main style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <h1>Partie créée</h1>
+        <p>{gameId}</p>
+        <QRCodeCanvas value={joinUrl} size={240} />
+        <button onClick={() => setPhase('setup')}>
+          Commencer
+        </button>
+      </main>
+    )
+  }
+
+  if (phase === 'join') {
+    return (
+      <main style={{ padding: 24, display: 'grid', gap: 16 }}>
+        <h1>Partie rejointe</h1>
+        <p>{gameId}</p>
+        <button onClick={() => setPhase('setup')}>
+          Commencer
+        </button>
+      </main>
+    )
+  }
+
+  if (phase === 'setup') {
+    return (
+      <main style={{ padding: 16 }}>
+        <h1>Placement des gemmes</h1>
+
+        <p>Gemmes : {gemCount}</p>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(8, 1fr)',
+            gap: 4,
+            maxWidth: 480
+          }}
+        >
+          {board.map((cell, index) => (
+            <button
+              key={index}
+              onClick={() => toggleSetupCell(index)}
+              style={{
+                aspectRatio: '1'
+              }}
+            >
+              {cell.hasGem ? '💎' : ''}
+            </button>
+          ))}
+        </div>
+
+        <button
+          style={{ marginTop: 16 }}
+          disabled={gemCount === 0}
+          onClick={() => {
+            setReady(true)
+            setPhase('playing')
+          }}
+        >
+          Valider
+        </button>
+      </main>
+    )
+  }
+
+  return (
+    <main style={{ padding: 16 }}>
+      <h1>Phase de jeu</h1>
+
+      <h2>Plateau adverse</h2>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(8, 1fr)',
+          gap: 4,
+          maxWidth: 480
+        }}
+      >
+        {enemyBoard.map((cell, index) => (
+          <button
+            key={index}
+            onClick={() => toggleNote(index)}
+            style={{
+              aspectRatio: '1'
+            }}
+          >
+            {cell.note ? '❓' : ''}
+          </button>
+        ))}
+      </div>
+
+      <h2>Entrées de rayon</h2>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(8, 1fr)',
+          gap: 4,
+          maxWidth: 480,
+          marginTop: 16
+        }}
+      >
+        {Array.from({ length: 16 }).map((_, index) => (
+          <button
+            key={index}
+            onClick={() => fireRay(index)}
+          >
+            {index}
+          </button>
+        ))}
+      </div>
+
+      <h2>Journal</h2>
+
+      <ul>
+        {logs.map((log, index) => (
+          <li key={index}>{log}</li>
+        ))}
+      </ul>
+    </main>
+  )
+}
