@@ -25,7 +25,11 @@ export default function SetupScreen() {
       const c = await connectGame(gameId)
 
       registerListeners(c, payload => {
-        const event = payload?.event
+        const realtimePayload = payload as {
+          event?: string
+        }
+
+        const event = realtimePayload.event
 
         if (event === 'player_joined') {
           setConnected(true)
