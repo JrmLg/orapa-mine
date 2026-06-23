@@ -1,16 +1,30 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { useState } from 'react'
 import HomeScreen from './screens/HomeScreen'
 import SetupScreen from './screens/SetupScreen'
 import GameScreen from './screens/GameScreen'
 
 export default function App() {
+  const [screen, setScreen] = useState<'home' | 'setup' | 'game'>('home')
+  const [gameId, setGameId] = useState('TEST01')
+
+  if (screen === 'setup') {
+    return <SetupScreen gameId={gameId} goGame={() => setScreen('game')} />
+  }
+
+  if (screen === 'game') {
+    return <GameScreen />
+  }
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomeScreen />} />
-        <Route path="/setup/:gameId" element={<SetupScreen />} />
-        <Route path="/game/:gameId" element={<GameScreen />} />
-      </Routes>
-    </BrowserRouter>
+    <HomeScreen
+      onCreate={(id) => {
+        setGameId(id)
+        setScreen('setup')
+      }}
+      onJoin={(id) => {
+        setGameId(id)
+        setScreen('setup')
+      }}
+    />
   )
 }

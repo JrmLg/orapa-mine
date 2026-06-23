@@ -1,37 +1,27 @@
-import { useNavigate } from 'react-router-dom'
-
-function createGameId() {
-  return Math.random()
-    .toString(36)
-    .slice(2, 8)
-    .toUpperCase()
+type Props = {
+  onCreate: (gameId: string) => void
+  onJoin: (gameId: string) => void
 }
 
-export default function HomeScreen() {
-  const navigate = useNavigate()
+function createGameId() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
+}
 
-  function createGame() {
-    const gameId = createGameId()
-    navigate(`/setup/${gameId}?host=true`)
-  }
-
-  function joinGame() {
-    const gameId = prompt('Code de la partie')
-
-    if (!gameId) return
-
-    navigate(`/setup/${gameId.toUpperCase()}`)
-  }
-
+export default function HomeScreen({ onCreate, onJoin }: Props) {
   return (
     <main style={{ padding: 24 }}>
       <h1>Orapa Mine</h1>
 
-      <button onClick={createGame}>
+      <button onClick={() => onCreate(createGameId())}>
         Créer une partie
       </button>
 
-      <button onClick={joinGame}>
+      <button
+        onClick={() => {
+          const gameId = prompt('Code de la partie')
+          if (gameId) onJoin(gameId.toUpperCase())
+        }}
+      >
         Rejoindre une partie
       </button>
     </main>
